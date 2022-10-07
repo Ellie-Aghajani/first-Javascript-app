@@ -1,9 +1,9 @@
 let pokemonRepository =(function(){
-    let pokemonList = [
-        {name:"Squirtle", height:0.5 , type:"water"},
-        {name:"Butterfree", height:1.1 , type:["Bug","flying"]},
-        {name:"Pidgeot", height:1.5 , type:["Flying","normal"]}
-    ]
+    let pokemonList = [];
+	let apiUrl = 'https://pokeapi.co/api/v2/pokemon/?limit=150'
+
+
+
 
     function getAll() {
         return pokemonList;
@@ -16,38 +16,66 @@ let pokemonRepository =(function(){
     }
     function addListItem(pokemon) {
       let pokemonList = document.querySelector(".pokemon-list");
-  
-      let listItem = document.createElement("li");
-    
+      let listpokemon = document.createElement("li");
       let button = document.createElement('button');
-    
       button.innerText = pokemon.name;
-    
       button.classList.add("button-css");
-    
-      listItem.appendChild(button);
-    
-      pokemonList.appendChild(listItem);
+      listpokemon.appendChild(button);
+      pokemonList.appendChild(listpokemon);
+	  button.addEventListener("click", function(event){ 
+		showDetails(pokemon);
+	});
     }
+	function loadList(){
+		return fetch(apiUrl).then(function(response){
+			return response.json();
+		}).then(function(json){
+			json.results.forEach(function(item){
+				let pokemon = {
+					name: item.name,
+					detailsUrl: item.url
+				}
+				add(pokemon);
+				console.log(pokemon);
+			});
+		}).catch(function(e){
+			console.error(e);
+		})
+	}
+	function loadDetails(item){
+		let url = item.detailsUrl;
+		return fetch(url).then(function(response){
+			return response.json();
+		}).then(function(details){
+			item.imageUrl = details.sprites.front_default;
+			item.height= details.height;
+			item.types = details.types;
+		}).catch(function(e){
+			console.error(e);
+		});
+	}
+	function showDetails(item){
+		pokemonRepository.loadDetails(item).then(function(){
+			console.log(item);
+		});
+	}
+	
 
     return {
       addListItem: addListItem,
       add: add,
-      getAll: getAll
-    }
+      getAll: getAll,
+	  loadList:loadList,
+	  loadDetails:loadDetails,
+	  showDetails:showDetails
 
-})()
+    };
 
-pokemonRepository.add({name:'Furret', height: 1.8, type:'normal'});
+})();
 
+pokemonRepository.loadList().then(function(){
+	pokemonRepository.getAll().forEach(function(pokemon){
+		pokemonRepository.addListItem(pokemon);
+	});
+});
 
-pokemonRepository.getAll().forEach(function(pokemon){
-  pokemonRepository.addListItem(pokemon);
-})
-
-var numberOfButtons = document.querySelectorAll(".button-css").length;
-
-for( var i = 0; i < numberOfButtons; i++){
-  document.querySelectorAll(".button-css")[i].addEventListener("click", function showDetails(pokemon){
-    console.log(pokemon);});
-}
